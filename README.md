@@ -309,6 +309,101 @@ Esse módulo representa sugestões que poderiam ser usadas para orientar o usuá
 
 ---
 
+## Instalação do Maven no Windows
+
+Para executar o projeto pelo terminal, é necessário ter o **Maven** instalado e configurado no `PATH` do Windows.
+
+### 1. Verificar se o Java está instalado
+
+Antes de instalar o Maven, verifique se o Java está instalado:
+
+```bat
+java -version
+```
+
+Também verifique se o compilador Java está disponível:
+
+```bat
+javac -version
+```
+
+O projeto recomenda o uso do **JDK 17 ou superior**.
+
+Caso o comando `javac` não funcione, instale o JDK antes de configurar o Maven.
+
+---
+
+### 2. Baixar o Maven
+
+Acesse o site oficial do Apache Maven:
+
+```txt
+https://maven.apache.org/download.cgi
+```
+
+Baixe a versão **Binary zip archive**, por exemplo:
+
+```txt
+apache-maven-3.9.16-bin.zip
+```
+
+Não baixe a versão `source`, pois ela contém apenas o código-fonte do Maven.
+
+---
+
+### 3. Extrair o Maven
+
+Extraia o arquivo `.zip` em uma pasta fixa do computador.
+
+Exemplo:
+
+```txt
+C:\apache-maven-3.9.16
+```
+
+Dentro dessa pasta deve existir a pasta `bin`:
+
+```txt
+C:\apache-maven-3.9.16\bin
+```
+
+---
+
+### 4. Configurar a variável MAVEN_HOME
+
+No CMD, execute:
+
+```bat
+setx MAVEN_HOME "C:\apache-maven-3.9.16"
+```
+
+Depois, adicione o Maven ao `PATH`:
+
+```bat
+setx PATH "%PATH%;C:\apache-maven-3.9.16\bin"
+```
+
+Após isso, feche o CMD e abra novamente.
+
+---
+
+### 5. Testar a instalação do Maven
+
+Com um novo CMD aberto, execute:
+
+```bat
+mvn -version
+```
+
+Se a instalação estiver correta, aparecerá algo semelhante a:
+
+```txt
+Apache Maven 3.9.16
+Java version: 17...
+```
+
+---
+
 ## Como executar o projeto
 
 ### Pré-requisitos
@@ -324,6 +419,12 @@ Para verificar se o Java está instalado, execute no CMD:
 java -version
 ```
 
+Para verificar se o compilador Java está instalado, execute:
+
+```bat
+javac -version
+```
+
 Para verificar se o Maven está instalado, execute:
 
 ```bat
@@ -332,14 +433,14 @@ mvn -version
 
 ---
 
-## Executando pelo CMD
+## Executando pelo CMD ou PowerShell
 
 Acesse a pasta onde está o arquivo `pom.xml`.
 
-Exemplo:
+Exemplo considerando a estrutura usada no projeto:
 
 ```bat
-cd /d "C:\apache-maven-3.9.16\InvestAI_RA3_JavaFX_10_CRUDs\InvestAI_RA3_JavaFX"
+cd /d "C:\Users\lucas\IdeaProjects\InvestAI_JavaFX\InvestAI_RA3_JavaFX"
 ```
 
 Depois execute:
@@ -362,12 +463,45 @@ Caso apareça o erro:
 The goal you specified requires a project to execute but there is no POM in this directory
 ```
 
-significa que o comando foi executado na pasta errada.
+significa que o comando foi executado em uma pasta que não contém o arquivo `pom.xml`.
 
-Nesse caso, entre na subpasta correta do projeto e rode novamente:
+Para resolver, entre na pasta correta do projeto:
 
 ```bat
 cd InvestAI_RA3_JavaFX
+```
+
+Depois rode novamente:
+
+```bat
+mvn clean javafx:run
+```
+
+---
+
+## Comandos úteis
+
+Verificar versão do Java:
+
+```bat
+java -version
+```
+
+Verificar versão do compilador Java:
+
+```bat
+javac -version
+```
+
+Verificar versão do Maven:
+
+```bat
+mvn -version
+```
+
+Executar o projeto:
+
+```bat
 mvn clean javafx:run
 ```
 
