@@ -13,9 +13,48 @@ import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.ObjIntConsumer;
+import java.util.function.Supplier;
 import java.util.List;
 
 public class App extends Application {
+    private static final String CAMPO_ID_USUARIO = "ID Usuário";
+    private static final String CAMPO_ID_CATEGORIA = "ID Categoria";
+    private static final String CAMPO_ID_META = "ID Meta";
+    private static final String CAMPO_NOME = "Nome";
+    private static final String CAMPO_EMAIL = "E-mail";
+    private static final String CAMPO_TELEFONE = "Telefone";
+    private static final String CAMPO_OBJETIVO = "Objetivo";
+    private static final String CAMPO_PERFIL = "Perfil";
+    private static final String CAMPO_TIPO = "Tipo";
+    private static final String CAMPO_DESCRICAO = "Descrição";
+    private static final String CAMPO_TITULO = "Título";
+    private static final String CAMPO_FONTE = "Fonte";
+    private static final String CAMPO_URL = "URL";
+    private static final String CAMPO_CATEGORIA = "Categoria";
+    private static final String CAMPO_IMPACTO = "Impacto";
+    private static final String CAMPO_VALOR = "Valor";
+    private static final String CAMPO_RENDA_MENSAL = "Renda Mensal";
+    private static final String CAMPO_SALDO_INICIAL = "Saldo Inicial";
+    private static final String CAMPO_VALOR_TOTAL = "Valor Total";
+    private static final String CAMPO_VALOR_GUARDADO = "Valor Guardado";
+    private static final String CAMPO_LIMITE_MENSAL = "Limite Mensal";
+    private static final String CAMPO_DATA = "Data";
+    private static final String CAMPO_PUBLICACAO = "Publicação";
+    private static final String CAMPO_PRAZO = "Prazo";
+    private static final String CAMPO_MES = "Mês";
+    private static final String CAMPO_ANO = "Ano";
+    private static final String CAMPO_OBSERVACAO = "Observação";
+    private static final String CAMPO_ATIVO = "Ativo";
+    private static final String CAMPO_FIXO = "Fixo";
+
+    private static final String PLACEHOLDER_DDMMYYYY = "DD/MM/AAAA";
+    private static final String PLACEHOLDER_SIM_NAO = "sim/não";
+
     @Override
     public void start(Stage stage) {
         TabPane tabs = new TabPane();
@@ -47,127 +86,149 @@ public class App extends Application {
         return tab;
     }
 
+    private <T extends Identificavel> CrudPane<T> crud(String titulo, String arquivo, Supplier<T> factory, List<FieldConfig<T>> campos) {
+        return new CrudPane<>(titulo, new FileRepository<>(arquivo), factory, campos);
+    }
+
+    private <T> FieldConfig<T> texto(String rotulo, Function<T, String> getter, BiConsumer<T, String> setter, String placeholder) {
+        return new FieldConfig<>(rotulo, getter, setter, placeholder);
+    }
+
+    private <T> FieldConfig<T> textoTrim(String rotulo, Function<T, String> getter, BiConsumer<T, String> setter, String placeholder) {
+        return texto(rotulo, getter, (objeto, valor) -> setter.accept(objeto, valor == null ? "" : valor.trim()), placeholder);
+    }
+
+    private <T> FieldConfig<T> textoObrigatorio(String rotulo, Function<T, String> getter, BiConsumer<T, String> setter, String placeholder, String campo) {
+        return texto(rotulo, getter, (objeto, valor) -> setter.accept(objeto, Formatador.textoObrigatorio(valor, campo)), placeholder);
+    }
+
+    private <T> FieldConfig<T> inteiro(String rotulo, Function<T, String> getter, ObjIntConsumer<T> setter, String placeholder, String campo) {
+        return texto(rotulo, getter, (objeto, valor) -> setter.accept(objeto, Formatador.inteiro(valor, campo)), placeholder);
+    }
+
+    private <T> FieldConfig<T> dinheiro(String rotulo, Function<T, String> getter, BiConsumer<T, BigDecimal> setter, String placeholder, String campo) {
+        return texto(rotulo, getter, (objeto, valor) -> setter.accept(objeto, Formatador.dinheiro(valor, campo)), placeholder);
+    }
+
+    private <T> FieldConfig<T> data(String rotulo, Function<T, String> getter, BiConsumer<T, LocalDate> setter, String placeholder, String campo) {
+        return texto(rotulo, getter, (objeto, valor) -> setter.accept(objeto, Formatador.dataBr(valor, campo)), placeholder);
+    }
+
+    private <T> FieldConfig<T> booleano(String rotulo, Function<T, String> getter, BiConsumer<T, Boolean> setter, String placeholder) {
+        return texto(rotulo, getter, (objeto, valor) -> setter.accept(objeto, Formatador.booleano(valor)), placeholder);
+    }
+
     private CrudPane<Usuario> crudUsuarios() {
-        return new CrudPane<>("CRUD 01 - Usuário",
-                new FileRepository<>("usuarios"), Usuario::new,
+        return crud("CRUD 01 - Usuário", "usuarios", Usuario::new,
                 List.of(
-                        new FieldConfig<>("Nome", Usuario::getNome, (u, v) -> u.setNome(Formatador.textoObrigatorio(v, "Nome")), "Lucas Alfaro"),
-                        new FieldConfig<>("E-mail", Usuario::getEmail, (u, v) -> u.setEmail(Formatador.textoObrigatorio(v, "E-mail")), "email@exemplo.com"),
-                        new FieldConfig<>("Telefone", Usuario::getTelefone, (u, v) -> u.setTelefone(Formatador.textoObrigatorio(v, "Telefone")), "41999999999"),
-                        new FieldConfig<>("Ativo", u -> u.isAtivo() ? "sim" : "não", (u, v) -> u.setAtivo(Formatador.booleano(v)), "sim/não")
+                        textoObrigatorio(CAMPO_NOME, Usuario::getNome, Usuario::setNome, "Lucas Alfaro", CAMPO_NOME),
+                        textoObrigatorio(CAMPO_EMAIL, Usuario::getEmail, Usuario::setEmail, "email@exemplo.com", CAMPO_EMAIL),
+                        textoObrigatorio(CAMPO_TELEFONE, Usuario::getTelefone, Usuario::setTelefone, "41999999999", CAMPO_TELEFONE),
+                        booleano(CAMPO_ATIVO, u -> u.isAtivo() ? "sim" : "não", Usuario::setAtivo, PLACEHOLDER_SIM_NAO)
                 ));
     }
 
     private CrudPane<PerfilFinanceiro> crudPerfilFinanceiro() {
-        return new CrudPane<>("CRUD 02 - Perfil Financeiro",
-                new FileRepository<>("perfis_financeiros"), PerfilFinanceiro::new,
+        return crud("CRUD 02 - Perfil Financeiro", "perfis_financeiros", PerfilFinanceiro::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", p -> String.valueOf(p.getUsuarioId()), (p, v) -> p.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("Renda Mensal", p -> Formatador.dinheiroTexto(p.getRendaMensal()), (p, v) -> p.setRendaMensal(Formatador.dinheiro(v, "Renda Mensal")), "3500,00"),
-                        new FieldConfig<>("Saldo Inicial", p -> Formatador.dinheiroTexto(p.getSaldoInicial()), (p, v) -> p.setSaldoInicial(Formatador.dinheiro(v, "Saldo Inicial")), "1000,00"),
-                        new FieldConfig<>("Objetivo", PerfilFinanceiro::getObjetivoFinanceiro, (p, v) -> p.setObjetivoFinanceiro(Formatador.textoObrigatorio(v, "Objetivo")), "Montar reserva"),
-                        new FieldConfig<>("Perfil", PerfilFinanceiro::getPerfilComportamento, (p, v) -> p.setPerfilComportamento(Formatador.textoObrigatorio(v, "Perfil")), "conservador/moderado/gastador")
+                        inteiro(CAMPO_ID_USUARIO, p -> String.valueOf(p.getUsuarioId()), PerfilFinanceiro::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        dinheiro(CAMPO_RENDA_MENSAL, p -> Formatador.dinheiroTexto(p.getRendaMensal()), PerfilFinanceiro::setRendaMensal, "3500,00", CAMPO_RENDA_MENSAL),
+                        dinheiro(CAMPO_SALDO_INICIAL, p -> Formatador.dinheiroTexto(p.getSaldoInicial()), PerfilFinanceiro::setSaldoInicial, "1000,00", CAMPO_SALDO_INICIAL),
+                        textoObrigatorio(CAMPO_OBJETIVO, PerfilFinanceiro::getObjetivoFinanceiro, PerfilFinanceiro::setObjetivoFinanceiro, "Montar reserva", CAMPO_OBJETIVO),
+                        textoObrigatorio(CAMPO_PERFIL, PerfilFinanceiro::getPerfilComportamento, PerfilFinanceiro::setPerfilComportamento, "conservador/moderado/gastador", CAMPO_PERFIL)
                 ));
     }
 
     private CrudPane<Categoria> crudCategorias() {
-        return new CrudPane<>("CRUD 03 - Categoria",
-                new FileRepository<>("categorias"), Categoria::new,
+        return crud("CRUD 03 - Categoria", "categorias", Categoria::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", c -> String.valueOf(c.getUsuarioId()), (c, v) -> c.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("Nome", Categoria::getNome, (c, v) -> c.setNome(Formatador.textoObrigatorio(v, "Nome")), "Alimentação"),
-                        new FieldConfig<>("Tipo", Categoria::getTipo, (c, v) -> c.setTipo(Formatador.textoObrigatorio(v, "Tipo")), "ganho/despesa"),
-                        new FieldConfig<>("Descrição", Categoria::getDescricao, (c, v) -> c.setDescricao(v == null ? "" : v.trim()), "Gastos com mercado")
+                        inteiro(CAMPO_ID_USUARIO, c -> String.valueOf(c.getUsuarioId()), Categoria::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        textoObrigatorio(CAMPO_NOME, Categoria::getNome, Categoria::setNome, "Alimentação", CAMPO_NOME),
+                        textoObrigatorio(CAMPO_TIPO, Categoria::getTipo, Categoria::setTipo, "ganho/despesa", CAMPO_TIPO),
+                        textoTrim(CAMPO_DESCRICAO, Categoria::getDescricao, Categoria::setDescricao, "Gastos com mercado")
                 ));
     }
 
     private CrudPane<Ganho> crudGanhos() {
-        return new CrudPane<>("CRUD 04 - Ganho",
-                new FileRepository<>("ganhos"), Ganho::new,
+        return crud("CRUD 04 - Ganho", "ganhos", Ganho::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", g -> String.valueOf(g.getUsuarioId()), (g, v) -> g.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("Descrição", Ganho::getDescricao, (g, v) -> g.setDescricao(Formatador.textoObrigatorio(v, "Descrição")), "Salário"),
-                        new FieldConfig<>("Valor", g -> Formatador.dinheiroTexto(g.getValor()), (g, v) -> g.setValor(Formatador.dinheiro(v, "Valor")), "2500,00"),
-                        new FieldConfig<>("Data", g -> Formatador.dataTexto(g.getDataGanho()), (g, v) -> g.setDataGanho(Formatador.dataBr(v, "Data")), "DD/MM/AAAA"),
-                        new FieldConfig<>("Fixo", g -> g.isFixo() ? "sim" : "não", (g, v) -> g.setFixo(Formatador.booleano(v)), "sim/não"),
-                        new FieldConfig<>("ID Categoria", g -> String.valueOf(g.getCategoriaId()), (g, v) -> g.setCategoriaId(Formatador.inteiro(v, "ID Categoria")), "1")
+                        inteiro(CAMPO_ID_USUARIO, g -> String.valueOf(g.getUsuarioId()), Ganho::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        textoObrigatorio(CAMPO_DESCRICAO, Ganho::getDescricao, Ganho::setDescricao, "Salário", CAMPO_DESCRICAO),
+                        dinheiro(CAMPO_VALOR, g -> Formatador.dinheiroTexto(g.getValor()), Ganho::setValor, "2500,00", CAMPO_VALOR),
+                        data(CAMPO_DATA, g -> Formatador.dataTexto(g.getDataGanho()), Ganho::setDataGanho, PLACEHOLDER_DDMMYYYY, CAMPO_DATA),
+                        booleano(CAMPO_FIXO, g -> g.isFixo() ? "sim" : "não", Ganho::setFixo, PLACEHOLDER_SIM_NAO),
+                        inteiro(CAMPO_ID_CATEGORIA, g -> String.valueOf(g.getCategoriaId()), Ganho::setCategoriaId, "1", CAMPO_ID_CATEGORIA)
                 ));
     }
 
     private CrudPane<Despesa> crudDespesas() {
-        return new CrudPane<>("CRUD 05 - Despesa",
-                new FileRepository<>("despesas"), Despesa::new,
+        return crud("CRUD 05 - Despesa", "despesas", Despesa::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", d -> String.valueOf(d.getUsuarioId()), (d, v) -> d.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("Descrição", Despesa::getDescricao, (d, v) -> d.setDescricao(Formatador.textoObrigatorio(v, "Descrição")), "Mercado"),
-                        new FieldConfig<>("Valor", d -> Formatador.dinheiroTexto(d.getValor()), (d, v) -> d.setValor(Formatador.dinheiro(v, "Valor")), "250,00"),
-                        new FieldConfig<>("Data", d -> Formatador.dataTexto(d.getDataDespesa()), (d, v) -> d.setDataDespesa(Formatador.dataBr(v, "Data")), "DD/MM/AAAA"),
-                        new FieldConfig<>("Fixo", d -> d.isFixo() ? "sim" : "não", (d, v) -> d.setFixo(Formatador.booleano(v)), "sim/não"),
-                        new FieldConfig<>("ID Categoria", d -> String.valueOf(d.getCategoriaId()), (d, v) -> d.setCategoriaId(Formatador.inteiro(v, "ID Categoria")), "1")
+                        inteiro(CAMPO_ID_USUARIO, d -> String.valueOf(d.getUsuarioId()), Despesa::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        textoObrigatorio(CAMPO_DESCRICAO, Despesa::getDescricao, Despesa::setDescricao, "Mercado", CAMPO_DESCRICAO),
+                        dinheiro(CAMPO_VALOR, d -> Formatador.dinheiroTexto(d.getValor()), Despesa::setValor, "250,00", CAMPO_VALOR),
+                        data(CAMPO_DATA, d -> Formatador.dataTexto(d.getDataDespesa()), Despesa::setDataDespesa, PLACEHOLDER_DDMMYYYY, CAMPO_DATA),
+                        booleano(CAMPO_FIXO, d -> d.isFixo() ? "sim" : "não", Despesa::setFixo, PLACEHOLDER_SIM_NAO),
+                        inteiro(CAMPO_ID_CATEGORIA, d -> String.valueOf(d.getCategoriaId()), Despesa::setCategoriaId, "1", CAMPO_ID_CATEGORIA)
                 ));
     }
 
     private CrudPane<OrcamentoCategoria> crudOrcamentos() {
-        return new CrudPane<>("CRUD 06 - Orçamento por Categoria",
-                new FileRepository<>("orcamentos"), OrcamentoCategoria::new,
+        return crud("CRUD 06 - Orçamento por Categoria", "orcamentos", OrcamentoCategoria::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", o -> String.valueOf(o.getUsuarioId()), (o, v) -> o.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("ID Categoria", o -> String.valueOf(o.getCategoriaId()), (o, v) -> o.setCategoriaId(Formatador.inteiro(v, "ID Categoria")), "2"),
-                        new FieldConfig<>("Limite Mensal", o -> Formatador.dinheiroTexto(o.getLimiteMensal()), (o, v) -> o.setLimiteMensal(Formatador.dinheiro(v, "Limite Mensal")), "600,00"),
-                        new FieldConfig<>("Mês", o -> String.valueOf(o.getMes()), (o, v) -> o.setMes(Formatador.inteiro(v, "Mês")), "6"),
-                        new FieldConfig<>("Ano", o -> String.valueOf(o.getAno()), (o, v) -> o.setAno(Formatador.inteiro(v, "Ano")), "2026")
+                        inteiro(CAMPO_ID_USUARIO, o -> String.valueOf(o.getUsuarioId()), OrcamentoCategoria::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        inteiro(CAMPO_ID_CATEGORIA, o -> String.valueOf(o.getCategoriaId()), OrcamentoCategoria::setCategoriaId, "2", CAMPO_ID_CATEGORIA),
+                        dinheiro(CAMPO_LIMITE_MENSAL, o -> Formatador.dinheiroTexto(o.getLimiteMensal()), OrcamentoCategoria::setLimiteMensal, "600,00", CAMPO_LIMITE_MENSAL),
+                        inteiro(CAMPO_MES, o -> String.valueOf(o.getMes()), OrcamentoCategoria::setMes, "6", CAMPO_MES),
+                        inteiro(CAMPO_ANO, o -> String.valueOf(o.getAno()), OrcamentoCategoria::setAno, "2026", CAMPO_ANO)
                 ));
     }
 
     private CrudPane<MetaFinanceira> crudMetas() {
-        return new CrudPane<>("CRUD 07 - Meta Financeira",
-                new FileRepository<>("metas"), MetaFinanceira::new,
+        return crud("CRUD 07 - Meta Financeira", "metas", MetaFinanceira::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", m -> String.valueOf(m.getUsuarioId()), (m, v) -> m.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("Nome", MetaFinanceira::getNome, (m, v) -> m.setNome(Formatador.textoObrigatorio(v, "Nome")), "Reserva de emergência"),
-                        new FieldConfig<>("Valor Total", m -> Formatador.dinheiroTexto(m.getValorTotal()), (m, v) -> m.setValorTotal(Formatador.dinheiro(v, "Valor Total")), "10000,00"),
-                        new FieldConfig<>("Valor Guardado", m -> Formatador.dinheiroTexto(m.getValorGuardado()), (m, v) -> m.setValorGuardado(Formatador.dinheiro(v, "Valor Guardado")), "1500,00"),
-                        new FieldConfig<>("Prazo", m -> Formatador.dataTexto(m.getPrazo()), (m, v) -> m.setPrazo(Formatador.dataBr(v, "Prazo")), "DD/MM/AAAA"),
-                        new FieldConfig<>("Ativo", m -> m.isAtivo() ? "sim" : "não", (m, v) -> m.setAtivo(Formatador.booleano(v)), "sim/não")
+                        inteiro(CAMPO_ID_USUARIO, m -> String.valueOf(m.getUsuarioId()), MetaFinanceira::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        textoObrigatorio(CAMPO_NOME, MetaFinanceira::getNome, MetaFinanceira::setNome, "Reserva de emergência", CAMPO_NOME),
+                        dinheiro(CAMPO_VALOR_TOTAL, m -> Formatador.dinheiroTexto(m.getValorTotal()), MetaFinanceira::setValorTotal, "10000,00", CAMPO_VALOR_TOTAL),
+                        dinheiro(CAMPO_VALOR_GUARDADO, m -> Formatador.dinheiroTexto(m.getValorGuardado()), MetaFinanceira::setValorGuardado, "1500,00", CAMPO_VALOR_GUARDADO),
+                        data(CAMPO_PRAZO, m -> Formatador.dataTexto(m.getPrazo()), MetaFinanceira::setPrazo, PLACEHOLDER_DDMMYYYY, CAMPO_PRAZO),
+                        booleano(CAMPO_ATIVO, m -> m.isAtivo() ? "sim" : "não", MetaFinanceira::setAtivo, PLACEHOLDER_SIM_NAO)
                 ));
     }
 
     private CrudPane<Aporte> crudAportes() {
-        return new CrudPane<>("CRUD 08 - Aporte em Meta",
-                new FileRepository<>("aportes"), Aporte::new,
+        return crud("CRUD 08 - Aporte em Meta", "aportes", Aporte::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", a -> String.valueOf(a.getUsuarioId()), (a, v) -> a.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("ID Meta", a -> String.valueOf(a.getMetaId()), (a, v) -> a.setMetaId(Formatador.inteiro(v, "ID Meta")), "1"),
-                        new FieldConfig<>("Valor", a -> Formatador.dinheiroTexto(a.getValor()), (a, v) -> a.setValor(Formatador.dinheiro(v, "Valor")), "200,00"),
-                        new FieldConfig<>("Data", a -> Formatador.dataTexto(a.getDataAporte()), (a, v) -> a.setDataAporte(Formatador.dataBr(v, "Data")), "DD/MM/AAAA"),
-                        new FieldConfig<>("Observação", Aporte::getObservacao, (a, v) -> a.setObservacao(v == null ? "" : v.trim()), "Depósito mensal")
+                        inteiro(CAMPO_ID_USUARIO, a -> String.valueOf(a.getUsuarioId()), Aporte::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        inteiro(CAMPO_ID_META, a -> String.valueOf(a.getMetaId()), Aporte::setMetaId, "1", CAMPO_ID_META),
+                        dinheiro(CAMPO_VALOR, a -> Formatador.dinheiroTexto(a.getValor()), Aporte::setValor, "200,00", CAMPO_VALOR),
+                        data(CAMPO_DATA, a -> Formatador.dataTexto(a.getDataAporte()), Aporte::setDataAporte, PLACEHOLDER_DDMMYYYY, CAMPO_DATA),
+                        textoTrim(CAMPO_OBSERVACAO, Aporte::getObservacao, Aporte::setObservacao, "Depósito mensal")
                 ));
     }
 
     private CrudPane<NoticiaFinanceira> crudNoticias() {
-        return new CrudPane<>("CRUD 09 - Notícia Financeira",
-                new FileRepository<>("noticias"), NoticiaFinanceira::new,
+        return crud("CRUD 09 - Notícia Financeira", "noticias", NoticiaFinanceira::new,
                 List.of(
-                        new FieldConfig<>("Título", NoticiaFinanceira::getTitulo, (n, v) -> n.setTitulo(Formatador.textoObrigatorio(v, "Título")), "Selic permanece estável"),
-                        new FieldConfig<>("Fonte", NoticiaFinanceira::getFonte, (n, v) -> n.setFonte(Formatador.textoObrigatorio(v, "Fonte")), "Banco Central"),
-                        new FieldConfig<>("URL", NoticiaFinanceira::getUrl, (n, v) -> n.setUrl(Formatador.textoObrigatorio(v, "URL")), "https://exemplo.com/noticia"),
-                        new FieldConfig<>("Categoria", NoticiaFinanceira::getCategoria, (n, v) -> n.setCategoria(Formatador.textoObrigatorio(v, "Categoria")), "Economia"),
-                        new FieldConfig<>("Impacto", NoticiaFinanceira::getNivelImpacto, (n, v) -> n.setNivelImpacto(Formatador.textoObrigatorio(v, "Impacto")), "baixo/médio/alto"),
-                        new FieldConfig<>("Publicação", n -> Formatador.dataTexto(n.getDataPublicacao()), (n, v) -> n.setDataPublicacao(Formatador.dataBr(v, "Publicação")), "DD/MM/AAAA")
+                        textoObrigatorio(CAMPO_TITULO, NoticiaFinanceira::getTitulo, NoticiaFinanceira::setTitulo, "Selic permanece estável", CAMPO_TITULO),
+                        textoObrigatorio(CAMPO_FONTE, NoticiaFinanceira::getFonte, NoticiaFinanceira::setFonte, "Banco Central", CAMPO_FONTE),
+                        textoObrigatorio(CAMPO_URL, NoticiaFinanceira::getUrl, NoticiaFinanceira::setUrl, "https://exemplo.com/noticia", CAMPO_URL),
+                        textoObrigatorio(CAMPO_CATEGORIA, NoticiaFinanceira::getCategoria, NoticiaFinanceira::setCategoria, "Economia", CAMPO_CATEGORIA),
+                        textoObrigatorio(CAMPO_IMPACTO, NoticiaFinanceira::getNivelImpacto, NoticiaFinanceira::setNivelImpacto, "baixo/médio/alto", CAMPO_IMPACTO),
+                        data(CAMPO_PUBLICACAO, n -> Formatador.dataTexto(n.getDataPublicacao()), NoticiaFinanceira::setDataPublicacao, PLACEHOLDER_DDMMYYYY, CAMPO_PUBLICACAO)
                 ));
     }
 
     private CrudPane<SugestaoEconomia> crudSugestoes() {
-        return new CrudPane<>("CRUD 10 - Sugestão de Economia",
-                new FileRepository<>("sugestoes"), SugestaoEconomia::new,
+        return crud("CRUD 10 - Sugestão de Economia", "sugestoes", SugestaoEconomia::new,
                 List.of(
-                        new FieldConfig<>("ID Usuário", s -> String.valueOf(s.getUsuarioId()), (s, v) -> s.setUsuarioId(Formatador.inteiro(v, "ID Usuário")), "1"),
-                        new FieldConfig<>("Título", SugestaoEconomia::getTitulo, (s, v) -> s.setTitulo(Formatador.textoObrigatorio(v, "Título")), "Reduzir delivery"),
-                        new FieldConfig<>("Descrição", SugestaoEconomia::getDescricao, (s, v) -> s.setDescricao(Formatador.textoObrigatorio(v, "Descrição")), "Diminuir pedidos semanais"),
-                        new FieldConfig<>("Fonte", SugestaoEconomia::getFonte, (s, v) -> s.setFonte(Formatador.textoObrigatorio(v, "Fonte")), "Análise IA"),
-                        new FieldConfig<>("Categoria", SugestaoEconomia::getCategoriaNome, (s, v) -> s.setCategoriaNome(v == null ? "" : v.trim()), "Alimentação"),
-                        new FieldConfig<>("Mês", s -> String.valueOf(s.getMes()), (s, v) -> s.setMes(Formatador.inteiro(v, "Mês")), "6"),
-                        new FieldConfig<>("Ano", s -> String.valueOf(s.getAno()), (s, v) -> s.setAno(Formatador.inteiro(v, "Ano")), "2026")
+                        inteiro(CAMPO_ID_USUARIO, s -> String.valueOf(s.getUsuarioId()), SugestaoEconomia::setUsuarioId, "1", CAMPO_ID_USUARIO),
+                        textoObrigatorio(CAMPO_TITULO, SugestaoEconomia::getTitulo, SugestaoEconomia::setTitulo, "Reduzir delivery", CAMPO_TITULO),
+                        textoObrigatorio(CAMPO_DESCRICAO, SugestaoEconomia::getDescricao, SugestaoEconomia::setDescricao, "Diminuir pedidos semanais", CAMPO_DESCRICAO),
+                        textoObrigatorio(CAMPO_FONTE, SugestaoEconomia::getFonte, SugestaoEconomia::setFonte, "Análise IA", CAMPO_FONTE),
+                        textoTrim(CAMPO_CATEGORIA, SugestaoEconomia::getCategoriaNome, SugestaoEconomia::setCategoriaNome, "Alimentação"),
+                        inteiro(CAMPO_MES, s -> String.valueOf(s.getMes()), SugestaoEconomia::setMes, "6", CAMPO_MES),
+                        inteiro(CAMPO_ANO, s -> String.valueOf(s.getAno()), SugestaoEconomia::setAno, "2026", CAMPO_ANO)
                 ));
     }
 

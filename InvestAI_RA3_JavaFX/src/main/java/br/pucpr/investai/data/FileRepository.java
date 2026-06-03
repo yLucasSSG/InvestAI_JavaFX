@@ -24,36 +24,25 @@ public class FileRepository<T extends Identificavel> {
     }
 
     public synchronized List<T> listarTodos() {
-        if (!Files.exists(arquivo)) {
-            return new ArrayList<>();
-        }
-        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(arquivo))) {
-            Object obj = in.readObject();
-            return new ArrayList<>((List<T>) obj);
-        } catch (EOFException e) {
-            return new ArrayList<>();
-        } catch (IOException | ClassNotFoundException e) {
-            throw new RepositoryException("Erro ao ler o arquivo: " + arquivo, e);
-        }
+        return lerDados();
     }
 
     public synchronized T inserir(T objeto) {
         validarSePossivel(objeto);
-        List<T> dados = listarTodos();
-        int proximoId = dados.stream().map(Identificavel::getId).max(Comparator.naturalOrder()).orElse(0) + 1;
-        objeto.setId(proximoId);
+        List<T> dados = lerDados();
+        objeto.setId(proximoId(dados));
         dados.add(objeto);
-        salvarTodos(dados);
+        salvarDados(dados);
         return objeto;
     }
 
     public synchronized void atualizar(T objeto) {
         validarSePossivel(objeto);
-        List<T> dados = listarTodos();
+        List<T> dados = lerDados();
         for (int i = 0; i < dados.size(); i++) {
             if (dados.get(i).getId() == objeto.getId()) {
                 dados.set(i, objeto);
-                salvarTodos(dados);
+                salvarDados(dados);
                 return;
             }
         }
@@ -61,24 +50,43 @@ public class FileRepository<T extends Identificavel> {
     }
 
     public synchronized void excluir(int id) {
-        List<T> dados = listarTodos();
+        List<T> dados = lerDados();
         boolean removido = dados.removeIf(item -> item.getId() == id);
         if (!removido) {
             throw new RepositoryException("Registro não encontrado para exclusão.");
         }
-        salvarTodos(dados);
+        salvarDados(dados);
     }
 
     public synchronized Optional<T> buscarPorId(int id) {
-        return listarTodos().stream().filter(item -> item.getId() == id).findFirst();
+        return lerDados().stream().filter(item -> item.getId() == id).findFirst();
     }
 
-    private void salvarTodos(List<T> dados) {
+    @SuppressWarnings("unchecked")
+    private List<T> lerDados() {
+        if (!Files.exists(arquivo)) {
+            return new ArrayList<>();
+        }
+        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(arquivo))) {
+            Object obj = in.readObject();
+            return new ArrayList<>((List<T>) obj);
+        } catch (EOFException ignored) {
+            return new ArrayList<>();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RepositoryException("Erro ao ler o arquivo: " + arquivo, e);
+        }
+    }
+
+    private void salvarDados(List<T> dados) {
         try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(arquivo))) {
             out.writeObject(dados);
         } catch (IOException e) {
             throw new RepositoryException("Erro ao salvar o arquivo: " + arquivo, e);
         }
+    }
+
+    private int proximoId(List<T> dados) {
+        return dados.stream().map(Identificavel::getId).max(Comparator.naturalOrder()).orElse(0) + 1;
     }
 
     private void validarSePossivel(T objeto) {
